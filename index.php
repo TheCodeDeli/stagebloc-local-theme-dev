@@ -19,7 +19,7 @@
 $loginRequired = $error = false;
 
 define('GIT_STATUS_CMD', 'git status -uno');
-define('GET_BRANCH_STATUS', "grep -i 'your branch is behind'");
+define('GITHUB_COMPARE_URL', 'https://github.com/%s/%s/compare/%s...%s');
 
 // Check to see if they've configured their application
 if ( file_exists('config.php') )
@@ -162,12 +162,29 @@ function branchStatus() {
 }
 
 /**
+ * Checks if the local branch is behind remote.
+ * @return boolean
+ */
+function branchBehindRemote() {
+	$status = branchStatus();
+	return strpos($status, 'behind');
+}
+
+/**
+ * Checks if the local branch is ahead of remote.
+ * @return boolean
+ */
+function branchAheadRemote() {
+	$status = branchStatus();
+	return strpos($status, 'ahead');
+}
+
+/**
  * Checks if the local branch is synced with the remote.
  * @return boolean
  */
-function branchDifferentFromMaster() {
-	$status = branchStatus();
-	return strpos($status, 'behind') || strpos($status, 'ahead');
+function branchDifferentFromRemote() {
+	return branchBehindRemote() || branchAheadRemote();
 }
 
 /**
@@ -175,7 +192,7 @@ function branchDifferentFromMaster() {
  * @return string
  */
 function branchCommitsBehindMessage() {
-	preg_match("/(behind|ahead).+'(.+)'\s+by (\d+) commit/i", branchStatus(), $matches);
+	preg_match("/(behind|ahead).+'(.+)' by (\d+) commit/i", branchStatus(), $matches);
 
 	$position = $matches[1];
 	$remote_branch = $matches[2];
@@ -191,6 +208,28 @@ function branchCommitsBehindMessage() {
 	}
 
 	return implode(' ', array($commits_count, $commit_singular_plural, $position, $remote_branch));
+}
+
+/**
+ * Returns the URL to compare the two branches on github
+ * @return string
+ */
+function githubCompareUrl() {
+	if( branchAheadRemote() ) {
+		return '#';
+	}
+
+	$username_repo_regexp = '/origin.+:(.+)\/(.+)\./i';
+	exec('git remote -v', $result);
+	$result = implode("\n", $result);
+	preg_match($username_repo_regexp, $result, $matches);
+
+	$username = $matches[1];
+	$repo = $matches[2];
+	$sha = exec('git rev-parse --short HEAD');
+	$branch = exec('git rev-parse --abbrev-ref HEAD');
+
+	return sprintf(GITHUB_COMPARE_URL, $username, $repo, $sha, $branch);
 }
 
 ?>
@@ -222,8 +261,8 @@ function branchCommitsBehindMessage() {
 				<a href="http://stagebloc.com/developers/theming" target="_blank" class="docs"><i></i>Documentation</a>
 				<a href="https://stagebloc.com/<?php echo $accountUrl; ?>/admin/management/theme/submit/upload" target="_blank">Upload Assets</a>
 
-				<?php if( branchDifferentFromMaster() ) : ?>
-					<a href="#" target="_blank" class="branch-status"><?php echo branchCommitsBehindMessage() ?></a>
+				<?php if( branchDifferentFromRemote() ) : ?>
+					<a href="<?php echo githubCompareUrl() ?>" target="_blank" class="branch-status"><?php echo branchCommitsBehindMessage() ?></a>
 				<?php endif ?>
 
 				<form method="post" action="submit_theme.php" id="updateTheme">
