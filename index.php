@@ -165,8 +165,9 @@ function branchStatus() {
  * Checks if the local branch is synced with the remote.
  * @return boolean
  */
-function branchBehindMaster() {
-	return strpos(branchStatus(), 'behind');
+function branchDifferentFromMaster() {
+	$status = branchStatus();
+	return strpos($status, 'behind') || strpos($status, 'ahead');
 }
 
 /**
@@ -174,17 +175,22 @@ function branchBehindMaster() {
  * @return string
  */
 function branchCommitsBehindMessage() {
-	preg_match("/(behind|ahead)\s+'(.+)'\s+by (\d+) commit/i", branchStatus(), $matches);
+	preg_match("/(behind|ahead).+'(.+)'\s+by (\d+) commit/i", branchStatus(), $matches);
 
 	$position = $matches[1];
 	$remote_branch = $matches[2];
 	$commits_count = $matches[3];
+	$commit_singular_plural = 'commit';
 
 	if( $position == 'ahead' ) {
 		$position .= ' of';
 	}
 
-	return sprintf("%s commits %s '%s'", $commits_count, $position, $remote_branch);
+	if( $commits_count > 1 ) {
+		$commit_singular_plural .= 's';
+	}
+
+	return implode(' ', array($commits_count, $commit_singular_plural, $position, $remote_branch));
 }
 
 ?>
@@ -216,7 +222,7 @@ function branchCommitsBehindMessage() {
 				<a href="http://stagebloc.com/developers/theming" target="_blank" class="docs"><i></i>Documentation</a>
 				<a href="https://stagebloc.com/<?php echo $accountUrl; ?>/admin/management/theme/submit/upload" target="_blank">Upload Assets</a>
 
-				<?php if( branchBehindMaster() ) : ?>
+				<?php if( branchDifferentFromMaster() ) : ?>
 					<a href="#" target="_blank" class="branch-status"><?php echo branchCommitsBehindMessage() ?></a>
 				<?php endif ?>
 
