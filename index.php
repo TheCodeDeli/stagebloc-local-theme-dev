@@ -18,6 +18,9 @@
 
 $loginRequired = $error = false;
 
+define('GIT_STATUS_CMD', 'git status -uno');
+define('GET_BRANCH_STATUS', "grep -i 'your branch is behind'");
+
 // Check to see if they've configured their application
 if ( file_exists('config.php') )
 {
@@ -147,7 +150,44 @@ if ( ! $loginRequired )
 		}
 	}
 	$themeOptionsHTML .= '</optgroup></select>';
-} ?>
+}
+
+/**
+ * Joins the output of the git status.
+ * @return string
+ */
+function branchStatus() {
+	$status = exec(GIT_STATUS_CMD, $result);
+	return implode("\n", $result);
+}
+
+/**
+ * Checks if the local branch is synced with the remote.
+ * @return boolean
+ */
+function branchBehindMaster() {
+	return strpos(branchStatus(), 'behind');
+}
+
+/**
+ * Returns a string with the details of how the branches differ.
+ * @return string
+ */
+function branchCommitsBehindMessage() {
+	preg_match("/(behind|ahead)\s+'(.+)'\s+by (\d+) commit/i", branchStatus(), $matches);
+
+	$position = $matches[1];
+	$remote_branch = $matches[2];
+	$commits_count = $matches[3];
+
+	if( $position == 'ahead' ) {
+		$position .= ' of';
+	}
+
+	return sprintf("%s commits %s '%s'", $commits_count, $position, $remote_branch);
+}
+
+?>
 
 		<?php if ( ! file_exists('config.php') ): ?>
 			<div class="content">
@@ -175,6 +215,11 @@ if ( ! $loginRequired )
 			<div id="console">
 				<a href="http://stagebloc.com/developers/theming" target="_blank" class="docs"><i></i>Documentation</a>
 				<a href="https://stagebloc.com/<?php echo $accountUrl; ?>/admin/management/theme/submit/upload" target="_blank">Upload Assets</a>
+
+				<?php if( branchBehindMaster() ) : ?>
+					<a href="#" target="_blank" class="branch-status"><?php echo branchCommitsBehindMessage() ?></a>
+				<?php endif ?>
+
 				<form method="post" action="submit_theme.php" id="updateTheme">
 					<?php echo $themeOptionsHTML; ?>
 					<?php echo $accountOptionsHTML; ?>

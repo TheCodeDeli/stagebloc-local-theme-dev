@@ -34,6 +34,9 @@
 	vertical-align: middle;
 }
 
+#console .branch-status { color: #FF8080; font-family: 'Courier', monospace; }
+#console:hover .branch-status { color: #FF6E6E; }
+
 #renderedTheme {
 	position: absolute;
 	top: 50px;
