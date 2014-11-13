@@ -1,6 +1,7 @@
 <?php
 
 require_once 'config.php'; // This will have to exist in the parent frame before this iFrame is loaded
+require_once 'stagebloc_theme.php';
 
 function recursiveTemplateInclude($html, $path) {
 	// Find all of the Includes inside of the theme
@@ -43,6 +44,15 @@ foreach ( $accounts as $account ) // Get the URL of the account we're currently 
 // Find all of the available themes we have
 $themes = array_values(preg_grep('/^([^.])/', scandir($themePath))); // Ignore hidden files
 $themeToUse = ( isset($_COOKIE['theme']) ? $_COOKIE['theme'] : $themes[0] ); // Default to use the first theme
+$currentThemePath = $themePath . $themeToUse;
+
+if( file_exists($currentThemePath . '/config.php') ) {
+  $config = require($currentThemePath . '/config.php');
+
+  if ( ! empty($config) ) {
+    StageBlocTheme::loadConfig($config);
+  }
+}
 
 // Get the theme and determine if there are any includes in it
 $html = file_get_contents($themePath . $themeToUse . '/theme.sbt');
@@ -70,7 +80,16 @@ try
 	// If we didn't pass the CSS, we'll append it to the rendered theme
 	if ( ! isset($postData['css']) )
 	{
-		if ( $cssPath !== null ) // If this var isn't null, we'll check another folder for the CSS files
+    if ( StageBlocTheme::hasCustomCSS() )
+    {
+      $linkTags = '';
+      foreach( StageBlocTheme::$cssFiles as $filePath ) {
+        $linkTags .= sprintf(StageBlocTheme::$linkTagSyntax, $currentThemePath, $filePath);
+      }
+
+			$renderedTheme = str_replace('</head>', $linkTags . '</head>', $renderedTheme);
+    }
+    else if ( $cssPath !== null ) // If this var isn't null, we'll check another folder for the CSS files
 		{
 			// Add a <link> tag for each CSS file in the folder we linked to
 			$cssFiles = scandir($themePath . $themeToUse . '/' . $cssPath);
@@ -94,7 +113,16 @@ try
 	// If we didn't pass the JS, we'll append it to the rendered theme
 	if ( ! isset($postData['js']) )
 	{
-		if ( $jsPath !== null ) // If this var isn't null, we'll check another folder for the JS files
+    if ( StageBlocTheme::hasCustomJS() )
+    {
+      $scriptTags = '';
+      foreach( StageBlocTheme::$jsFiles as $filePath ) {
+        $scriptTags .= sprintf(StageBlocTheme::$scriptTagSyntax, $currentThemePath, $filePath);
+      }
+
+			$renderedTheme = str_replace('</head>', $scriptTags . '</head>', $renderedTheme);
+    }
+    else if ( $jsPath !== null ) // If this var isn't null, we'll check another folder for the JS files
 		{
 			// Add a <script> tag for each JS file in the folder we linked to
 			$jsFiles = scandir($themePath . $themeToUse . '/' . $jsPath);

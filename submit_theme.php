@@ -1,6 +1,7 @@
 <?php
 
 require_once 'config.php';
+require_once 'stagebloc_theme.php';
 
 function recursiveTemplateInclude($html, $path) {
 	// Find all of the Includes inside of the theme
@@ -27,6 +28,15 @@ function recursiveTemplateInclude($html, $path) {
 if ( isset($_COOKIE['theme']) )
 {
 	$themeToUse = $_COOKIE['theme'];
+  $currentThemePath = $themePath . $themeToUse;
+
+  if( file_exists($currentThemePath . '/config.php') ) {
+    $config = require($currentThemePath . '/config.php');
+
+    if ( ! empty($config) ) {
+      StageBlocTheme::loadConfig($config);
+    }
+  }
 
 	// Get the HTML to pass along to the API
 	$html = file_get_contents($themePath . $themeToUse . '/theme.sbt');
@@ -40,7 +50,16 @@ if ( isset($_COOKIE['theme']) )
 		'mobile' => filter_var($_POST['mobile'], FILTER_VALIDATE_BOOLEAN)
 	);
 
-	if ( $cssPath !== null ) // If this var isn't null, we'll check another folder for the CSS files
+  if ( StageBlocTheme::hasCustomCSS() )
+  {
+    $css = '';
+    foreach( StageBlocTheme::$cssFiles as $filePath ) {
+      $css .= file_get_contents($currentThemePath . '/' . $filePath);
+    }
+
+    $postData['css'] = $css;
+  }
+  else if ( $cssPath !== null ) // If this var isn't null, we'll check another folder for the CSS files
 	{
 		$css = '';
 		$cssFiles = scandir($themePath . $themeToUse . '/' . $cssPath);
@@ -63,7 +82,16 @@ if ( isset($_COOKIE['theme']) )
         die('The first character in your CSS is an "@". For some reason, this breaks submitting the theme. If you\'d like to help fix this, please see here: https://github.com/stagebloc/local-theme-dev/issues/8');
     }
 
-	if ( $jsPath !== null ) // If this var isn't null, we'll check another folder for the CSS files
+  if ( StageBlocTheme::hasCustomJS() )
+  {
+    $js = '';
+    foreach( StageBlocTheme::$jsFiles as $filePath ) {
+      $js .= file_get_contents($currentThemePath . '/' . $filePath);
+    }
+
+    $postData['js'] = $js;
+  }
+  else if ( $jsPath !== null ) // If this var isn't null, we'll check another folder for the CSS files
 	{
 		$js = '';
 		$jsFiles = scandir($themePath . $themeToUse . '/' . $jsPath);
