@@ -55,10 +55,10 @@ if( file_exists($currentThemePath . '/config.php') ) {
 }
 
 // Get the theme and determine if there are any includes in it
-$html = file_get_contents($themePath . $themeToUse . '/theme.sbt');
+$html = file_get_contents($currentThemePath . '/theme.sbt');
 if ( $themeViewsPath !== null )
 {
-	$html = recursiveTemplateInclude($html, $themePath . $themeToUse . '/' . $themeViewsPath);
+	$html = recursiveTemplateInclude($html, $currentThemePath . '/' . $themeViewsPath);
 }
 
 // Pass out theme data to the API to be rendered
@@ -92,7 +92,7 @@ try
     else if ( $cssPath !== null ) // If this var isn't null, we'll check another folder for the CSS files
 		{
 			// Add a <link> tag for each CSS file in the folder we linked to
-			$cssFiles = scandir($themePath . $themeToUse . '/' . $cssPath);
+			$cssFiles = scandir($currentThemePath . '/' . $cssPath);
 			foreach ( $cssFiles as $cssFile )
 			{
 				if ( strpos($cssFile, '.css') !== false )
@@ -100,13 +100,13 @@ try
 					// This method will dump the CSS into the page itself and probably isn't very useful
 					//$renderedTheme = str_replace('</head>', '<style>' . file_get_contents($themePath . $themeToUse . '/' . $cssPath . $cssFile) . '</style></head>', $renderedTheme);
 
-					$renderedTheme = str_replace('</head>', '<link rel="stylesheet" type="text/css" href="' . $themePath . $themeToUse . '/' . $cssPath . $cssFile . '"></head>', $renderedTheme);
+					$renderedTheme = str_replace('</head>', '<link rel="stylesheet" type="text/css" href="' . $currentThemePath . '/' . $cssPath . $cssFile . '"></head>', $renderedTheme);
 				}
 			}
 		}
 		else
 		{
-			$renderedTheme = str_replace('</head>', '<link rel="stylesheet" type="text/css" href="' . $themePath . $themeToUse . '/style.css"></head>', $renderedTheme);
+			$renderedTheme = str_replace('</head>', '<link rel="stylesheet" type="text/css" href="' . $currentThemePath . '/style.css"></head>', $renderedTheme);
 		}
 	}
 
@@ -125,18 +125,18 @@ try
     else if ( $jsPath !== null ) // If this var isn't null, we'll check another folder for the JS files
 		{
 			// Add a <script> tag for each JS file in the folder we linked to
-			$jsFiles = scandir($themePath . $themeToUse . '/' . $jsPath);
+			$jsFiles = scandir($currentThemePath . '/' . $jsPath);
 			foreach ( $jsFiles as $jsFile )
 			{
 				if ( strpos($jsFile, '.js') !== false )
 				{
-					$renderedTheme = str_replace('</head>', '<script src="' . $themePath . $themeToUse . '/' . $jsPath . $jsFile . '"></script></head>', $renderedTheme);
+					$renderedTheme = str_replace('</head>', '<script src="' . $currentThemePath . '/' . $jsPath . $jsFile . '"></script></head>', $renderedTheme);
 				}
 			}
 		}
 		else
 		{
-			$renderedTheme = str_replace('</head>', '<script src="' . $themePath . $themeToUse . '/javascript.js"></script></head>', $renderedTheme);
+			$renderedTheme = str_replace('</head>', '<script src="' . $currentThemePath . '/javascript.js"></script></head>', $renderedTheme);
 		}
 	}
 
